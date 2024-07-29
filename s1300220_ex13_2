@@ -1,0 +1,51 @@
+import pandas as pd
+import plotly.express as px
+from geopy.distance import geodesic
+
+file_path = 'FrequencyPatterns.txt'
+data = pd.read_csv(file_path, header=None, names=['Latitude', 'Longitude'])
+
+coordinates = list(zip(data['Latitude'], data['Longitude']))
+
+def calculate_distance(coord1, coord2):
+    return geodesic(coord1, coord2).kilometers
+
+max_distance = 0
+longest_pattern = None
+
+for i in range(len(coordinates) - 1):
+    for j in range(i + 1, len(coordinates)):
+        distance = calculate_distance(coordinates[i], coordinates[j])
+        if distance > max_distance:
+            max_distance = distance
+            longest_pattern = (coordinates[i], coordinates[j])
+
+if longest_pattern:
+    longest_df = pd.DataFrame(
+        {
+            'latitude': [longest_pattern[0][0], longest_pattern[1][0]],
+            'longitude': [longest_pattern[0][1], longest_pattern[1][1]]
+        }
+    )
+
+    fig = px.scatter_mapbox(
+        data_frame=longest_df,
+        lat='latitude',
+        lon='longitude',
+        title='Longest Pattern on OpenStreetMap',
+        center={'lat': 34.686567, 'lon': 135.520000},
+        zoom=4,
+        height=600,
+        width=800,
+        template='plotly',
+        color_discrete_sequence=['red']
+    )
+
+    fig.update_layout(
+        mapbox_style="open-street-map",
+        margin={"r":0,"t":0,"l":0,"b":0}
+    )
+
+    fig.show()
+else:
+    print("No patterns found")
